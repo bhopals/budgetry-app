@@ -137,7 +137,7 @@ let uiController = (function(){
           id = DOMStrings.incomeList;
         } else if(type === 'exp') {
           element = `<div class="item clearfix container-exp-${object.id}">
-              <div class="item__description">${object.desc} rent</div>
+              <div class="item__description">${object.desc}</div>
               <div class="right clearfix">
                   <div class="item__value">- ${object.value}</div>
                   <div class="item__delete" >

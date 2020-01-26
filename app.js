@@ -49,8 +49,9 @@ let budgetController = (function(){
       data.items[type].push(item);
       return item;
     },
-    calculateBudget: (type) => {
-      calculateTotal(type);
+    calculateBudget: () => {
+      calculateTotal('exp');
+      calculateTotal('inc');
       let percentage = -1;
       if(data.total.inc > 0) {
         percentage = Math.round((data.total.exp / data.total.inc) * 100 )
@@ -58,9 +59,11 @@ let budgetController = (function(){
       budget = data.total.inc - data.total.exp;
       data.percentage = percentage;
       data.budget = budget;
-
-      console.log(data);
     }, 
+    deleteDataItem : (type, id) => {
+      let temp = data.items[type].filter((item)=> item.id != id);
+      data.items[type] = temp;
+    },
     getBudgetData: () => {
       return {
         totalExpense: data.total.exp,
@@ -70,9 +73,6 @@ let budgetController = (function(){
       }
     }
   }
-
-
-
 })()
 
 let uiController = (function(){
@@ -81,13 +81,15 @@ let uiController = (function(){
     desc : '.add__description',
     value: '.add__value',
     addBtn : '.add__btn',
-    deleteBtn: '.item__delete--btn',
+    deleteBtn: '.item__delete',
     expenseList: '.expenses__list',
     incomeList: '.income__list',
     budgetLabel:'.budget__value',
     incomeLabel:'.budget__income--value',
     expenseLabel:'.budget__expenses--value',
-    percentLabel:'.budget__expenses--percentage'
+    percentLabel:'.budget__expenses--percentage',
+    container: '.container',
+    idContainer:'.container-'
   }
   return {
     getInput : function () {
@@ -99,38 +101,37 @@ let uiController = (function(){
     },
     
     displayBudget: (object) => {
-      document.querySelector(DOMStrings.budgetLabel).value = object.budget
-      document.querySelector(DOMStrings.incomeLabel).value = object.totalIncome
-      document.querySelector(DOMStrings.expenseLabel).value = object.totalExpense
+      document.querySelector(DOMStrings.budgetLabel).textContent = object.budget
+      document.querySelector(DOMStrings.incomeLabel).textContent = object.totalIncome
+      document.querySelector(DOMStrings.expenseLabel).textContent = object.totalExpense
 
       if(object.percentage > 0) {
-        document.querySelector(DOMStrings.percentLabel).value = object.percentage+'%'
+        document.querySelector(DOMStrings.percentLabel).textContent = object.percentage+'%'
       } else {
-        document.querySelector(DOMStrings.percentLabel).value = '---'
+        document.querySelector(DOMStrings.percentLabel).textContent = '---'
       }
     },
 
     addItemsList : (object, type) => {
       let element, id;
         if(type === 'inc') {
-          element = `<div class="item clearfix" id="income-${object.id}">
+          element = `<div class="item clearfix container-inc-${object.id}">
               <div class="item__description">${object.desc}</div>
               <div class="right clearfix">
                   <div class="item__value">+ ${object.value}</div>
-                  <div class="item__delete">
-                      <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button>
+                  <div class="item__delete" >
+                      <button class="item__delete--btn"><i id="inc-${object.id}" class="ion-ios-close-outline"></i></button>
                   </div>
               </div>
           </div>`;
           id = DOMStrings.incomeList;
         } else if(type === 'exp') {
-          element = `<div class="item clearfix" id="expense-${object.id}">
+          element = `<div class="item clearfix container-exp-${object.id}">
               <div class="item__description">${object.desc} rent</div>
               <div class="right clearfix">
                   <div class="item__value">- ${object.value}</div>
-                  <div class="item__percentage">21%</div>
-                  <div class="item__delete">
-                      <button class="item__delete--btn"><i class="ion-ios-close-outline"></i></button>
+                  <div class="item__delete" >
+                      <button class="item__delete--btn"><i id="exp-${object.id}" class="ion-ios-close-outline"></i></button>
                   </div>
               </div>
           </div>`
@@ -142,6 +143,10 @@ let uiController = (function(){
       document.querySelector(DOMStrings.value).value = '';
       document.querySelector(DOMStrings.desc).value = '';
       document.querySelector(DOMStrings.value).focus();
+    },
+    deleteListItems : (itemID) => {
+      let elem = document.querySelector(DOMStrings.idContainer+itemID);
+      elem.parentNode.removeChild(elem);
     },
     getDomStrings : DOMStrings
   }
@@ -157,6 +162,17 @@ let appController = (function(budgetCtrl, uiCtrl){
         addItems();
       }
     })
+    document.querySelector(uiCtrl.getDomStrings.container).addEventListener('click', removeItem);
+  }
+  
+  function updateBudget() {
+    //1. calculate the Budget
+    budgetCtrl.calculateBudget();
+    console.log(budgetCtrl.getDataItems);
+    console.log(budgetCtrl.getBudgetData());
+
+    //2. Display the budget on UI
+    uiCtrl.displayBudget(budgetCtrl.getBudgetData())
   }
 
   function addItems() {
@@ -165,7 +181,7 @@ let appController = (function(budgetCtrl, uiCtrl){
     //1. Read the inputs
     inputs = uiCtrl.getInput();
 
-    if(inputs.description.trim() !== '' && !isNaN(inputs.value)) {
+    if(inputs.description.trim() !== '' && inputs.value.trim() !== '' && !isNaN(inputs.value)) {
       //2. Add the item to budget controller
       item = budgetCtrl.addItems(inputs.type, inputs.description, parseFloat(inputs.value, 2))
 
@@ -175,21 +191,23 @@ let appController = (function(budgetCtrl, uiCtrl){
       //4. clear data elements
       uiCtrl.clearFields();
 
-      //5. calculate the Budget
-      budgetCtrl.calculateBudget(inputs.type);
-      console.log(budgetCtrl.getDataItems);
-      console.log(budgetCtrl.getBudgetData());
-
-      //6. Display the budget on UI
-      uiCtrl.displayBudget(budgetCtrl.getBudgetData())
+      //5. updateBudget
+      updateBudget();
     }
-    
-
-
   }
 
-  function removeItem() {
-
+  function removeItem(event) {
+    let item = event.target.id;
+    if(item) {
+      let list = item.split('-');
+      let type = list[0];
+      let id = list[1];
+      if(type && id) {
+        budgetCtrl.deleteDataItem(type, id);
+        uiCtrl.deleteListItems(event.target.id);
+        updateBudget();
+      }
+    }
   }
 
   return {

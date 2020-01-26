@@ -168,8 +168,6 @@ let appController = (function(budgetCtrl, uiCtrl){
   function updateBudget() {
     //1. calculate the Budget
     budgetCtrl.calculateBudget();
-    console.log(budgetCtrl.getDataItems);
-    console.log(budgetCtrl.getBudgetData());
 
     //2. Display the budget on UI
     uiCtrl.displayBudget(budgetCtrl.getBudgetData())
@@ -220,7 +218,6 @@ let appController = (function(budgetCtrl, uiCtrl){
       addEventListeners()
   }
 } 
-  
 })(budgetController, uiController)
 
 

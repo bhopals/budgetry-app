@@ -76,11 +76,18 @@ let budgetController = (function(){
 })()
 
 let uiController = (function(){
+  let m_names = ['January', 'February', 'March', 
+               'April', 'May', 'June', 'July', 
+               'August', 'September', 'October', 'November', 'December'];
+
+  let date_ = m_names[new Date().getMonth()]+' '+new Date().getFullYear();
+
   let DOMStrings = {
     type : '.add__type',
     desc : '.add__description',
     value: '.add__value',
     addBtn : '.add__btn',
+    monthText: '.budget__title--month',
     deleteBtn: '.item__delete',
     expenseList: '.expenses__list',
     incomeList: '.income__list',
@@ -91,6 +98,9 @@ let uiController = (function(){
     container: '.container',
     idContainer:'.container-'
   }
+
+  document.querySelector(DOMStrings.monthText).textContent = date_;
+
   return {
     getInput : function () {
       return {
